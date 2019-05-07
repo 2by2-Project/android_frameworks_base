@@ -527,6 +527,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import lineageos.providers.LineageSettings;
+
 public class ActivityManagerService extends IActivityManager.Stub
         implements Watchdog.Monitor, BatteryStatsImpl.BatteryCallback, ActivityManagerGlobalLock {
 
@@ -20872,5 +20874,15 @@ public class ActivityManagerService extends IActivityManager.Stub
             app = mPidsSelfLocked.get(debugPid);
         }
         mOomAdjuster.mCachedAppOptimizer.binderError(debugPid, app, code, flags, err);
+    }
+
+    @Override
+    public boolean isThreeFingersSwipeActive() {
+        synchronized (this) {
+            return LineageSettings.System.getIntForUser(
+                mContext.getContentResolver(),
+                Settings.System.THREE_FINGER_GESTURE, 12,
+                UserHandle.USER_CURRENT) != 0;
+        }
     }
 }
