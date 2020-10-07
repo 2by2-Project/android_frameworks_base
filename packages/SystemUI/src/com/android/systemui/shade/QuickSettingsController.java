@@ -289,6 +289,8 @@ public class QuickSettingsController implements Dumpable {
     private int mOneFingerQuickSettingsIntercept;
     private final ContentObserver mOneFingerQuickSettingsInterceptObserver;
 
+    private WindowManager mWindowManager;
+
     private final Region mInterceptRegion = new Region();
     /** The end bounds of a clipping animation. */
     private final Rect mClippingAnimationEndBounds = new Rect();
@@ -407,6 +409,8 @@ public class QuickSettingsController implements Dumpable {
                         LineageSettings.System.STATUS_BAR_QUICK_QS_PULLDOWN, 0);
             }
         };
+
+        mWindowManager = mPanelView.getContext().getSystemService(WindowManager.class);
 
         dumpManager.registerDumpable(this);
     }
@@ -554,8 +558,7 @@ public class QuickSettingsController implements Dumpable {
      *  on ACTION_DOWN, and safely queried repeatedly thereafter during ACTION_MOVE events.
      */
     public void updateGestureInsetsCache() {
-        WindowManager wm = this.mPanelView.getContext().getSystemService(WindowManager.class);
-        WindowMetrics windowMetrics = wm.getCurrentWindowMetrics();
+        WindowMetrics windowMetrics = mWindowManager.getCurrentWindowMetrics();
         mCachedGestureInsets = windowMetrics.getWindowInsets().getInsets(
                 WindowInsets.Type.systemGestures());
         mCachedWindowWidth = windowMetrics.getBounds().width();
@@ -1537,8 +1540,8 @@ public class QuickSettingsController implements Dumpable {
 
     private int calculateRightClippingBound() {
         if (mIsFullWidth) {
-            return mPanelView.getRight()
-                    + mDisplayRightInset;
+            // right bounds should also always reach the edge of the screen - getCurrentWindowMetrics ignores insets
+            return mWindowManager.getCurrentWindowMetrics().getBounds().right;
         } else {
             return mNotificationStackScrollLayoutController.getRight()
                     + mDisplayLeftInset;

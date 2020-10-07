@@ -480,24 +480,7 @@ public class InsetsState implements Parcelable {
     }
 
     public void getDisplayCutoutSafe(Rect outBounds) {
-        outBounds.set(
-                WindowLayout.MIN_X, WindowLayout.MIN_Y, WindowLayout.MAX_X, WindowLayout.MAX_Y);
-        final DisplayCutout cutout = mDisplayCutout.get();
-        final Rect displayFrame = mDisplayFrame;
-        if (!cutout.isEmpty()) {
-            if (cutout.getSafeInsetLeft() > 0) {
-                outBounds.left = displayFrame.left + cutout.getSafeInsetLeft();
-            }
-            if (cutout.getSafeInsetTop() > 0) {
-                outBounds.top = displayFrame.top + cutout.getSafeInsetTop();
-            }
-            if (cutout.getSafeInsetRight() > 0) {
-                outBounds.right = displayFrame.right - cutout.getSafeInsetRight();
-            }
-            if (cutout.getSafeInsetBottom() > 0) {
-                outBounds.bottom = displayFrame.bottom - cutout.getSafeInsetBottom();
-            }
-        }
+        outBounds.set(mDisplayFrame);
     }
 
     public void setRoundedCorners(RoundedCorners roundedCorners) {

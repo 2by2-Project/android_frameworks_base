@@ -1426,6 +1426,7 @@ public class DisplayPolicy {
         displayFrames = win.getDisplayFrames(displayFrames);
 
         final WindowManager.LayoutParams attrs = win.mAttrs.forRotation(displayFrames.mRotation);
+        attrs.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
         sTmpClientFrames.attachedFrame = attached != null ? attached.getFrame() : null;
 
         // If this window has different LayoutParams for rotations, we cannot trust its requested
