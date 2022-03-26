@@ -6,4 +6,5 @@
 <resources>
     <!-- Statusbar Icons -->
     <string name="status_bar_vpn">VPN</string>
+    <string name="status_bar_data_saver">Data saver</string>
 </resources>
