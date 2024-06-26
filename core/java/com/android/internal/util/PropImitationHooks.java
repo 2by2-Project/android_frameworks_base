@@ -97,11 +97,22 @@ public class PropImitationHooks {
         sIsPhotos = packageName.equals(PACKAGE_GPHOTOS);
 
         /* Set Certified Properties for GMSCore
+         * Set Pixel XL Properties for Google Photos
          * Set Stock Fingerprint for ARCore
          * Set custom model for Netflix
          */
         if (sIsGms) {
             setCertifiedPropsForGms();
+        } else if (sIsPhotos) {
+            dlog("Setting model to Pixel XL for Google Photos");
+            setPropValue("BRAND", "google");
+            setPropValue("MANUFACTURER", "Google");
+            setPropValue("DEVICE", "marlin");
+            setPropValue("PRODUCT", "marlin");
+            setPropValue("HARDWARE", "marlin");
+            setPropValue("MODEL", "Pixel XL");
+            setPropValue("ID", "QP1A.191005.007.A3");
+            setPropValue("FINGERPRINT", "google/marlin/marlin:10/QP1A.191005.007.A3/5972272:user/release-keys");
         } else if (!sStockFp.isEmpty() && packageName.equals(PACKAGE_ARCORE)) {
             dlog("Setting stock fingerprint for: " + packageName);
             setPropValue("FINGERPRINT", sStockFp);
