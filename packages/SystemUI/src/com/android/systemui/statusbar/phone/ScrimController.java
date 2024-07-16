@@ -431,7 +431,7 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         if (mScrimBehind != null) {
             mCustomScrimAlpha = (Settings.System.getFloatForUser(
                 mScrimBehind.getContext().getContentResolver(),
-                Settings.System.QS_TRANSPARENCY, 100,
+                Settings.System.QS_TRANSPARENCY, 70,
                 UserHandle.USER_CURRENT) / 100);
         }
         final ScrimState[] states = ScrimState.values();
