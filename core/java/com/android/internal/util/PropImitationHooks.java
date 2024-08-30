@@ -35,12 +35,15 @@ import com.android.internal.R;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
+import java.util.Map;
 
 public class PropImitationHooks {
 
     private static final String TAG = "PropImitationHooks";
-    private static final boolean DEBUG = false;
+    private static final String PROP_HOOKS = "persist.sys.pihooks_";
+    private static final boolean DEBUG = SystemProperties.getBoolean(PROP_HOOKS + "DEBUG", false);
 
     private static final String PACKAGE_ARCORE = "com.google.ar.core";
     private static final String PACKAGE_FINSKY = "com.android.vending";
@@ -57,6 +60,18 @@ public class PropImitationHooks {
 
     private static final ComponentName GMS_ADD_ACCOUNT_ACTIVITY = ComponentName.unflattenFromString(
             "com.google.android.gms/.auth.uiflows.minutemaid.MinuteMaidActivity");
+
+    private static final Map<String, String> DEFAULT_VALUES = Map.of(
+        "BRAND", "google",
+        "MANUFACTURER", "Google",
+        "DEVICE", "husky",
+        "FINGERPRINT", "google/husky_beta/husky:15/AP31.240517.022/11948202:user/release-keys",
+        "MODEL", "Pixel 8 Pro",
+        "PRODUCT", "husky_beta",
+        "DEVICE_INITIAL_SDK_INT", "21",
+        "SECURITY_PATCH", "2024-07-05",
+        "ID", "AP31.240617.009"
+    );
 
     private static final Set<String> sPixelFeatures = Set.of(
         "PIXEL_2017_PRELOAD",
@@ -126,21 +141,45 @@ public class PropImitationHooks {
         }
     }
 
-    private static void setPropValue(String key, String value) {
+    private static void setPropValue(String key, Object value) {
         try {
-            dlog("Setting prop " + key + " to " + value.toString());
-            Class clazz = Build.class;
-            if (key.startsWith("VERSION.")) {
-                clazz = Build.VERSION.class;
-                key = key.substring(8);
+            Field field = getBuildClassField(key);
+            if (field != null) {
+                field.setAccessible(true);
+                if (field.getType() == int.class) {
+                    if (value instanceof String) {
+                        field.set(null, Integer.parseInt((String) value));
+                    } else if (value instanceof Integer) {
+                        field.set(null, (Integer) value);
+                    }
+                } else if (field.getType() == long.class) {
+                    if (value instanceof String) {
+                        field.set(null, Long.parseLong((String) value));
+                    } else if (value instanceof Long) {
+                        field.set(null, (Long) value);
+                    }
+                } else {
+                    field.set(null, value.toString());
+                }
+                field.setAccessible(false);
+                dlog("Set prop " + key + " to " + value);
+            } else {
+                Log.e(TAG, "Field " + key + " not found in Build or Build.VERSION classes");
             }
-            Field field = clazz.getDeclaredField(key);
-            field.setAccessible(true);
-            // Cast the value to int if it's an integer field, otherwise string.
-            field.set(null, field.getType().equals(Integer.TYPE) ? Integer.parseInt(value) : value);
-            field.setAccessible(false);
-        } catch (Exception e) {
+        } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
             Log.e(TAG, "Failed to set prop " + key, e);
+        }
+    }
+
+    private static Field getBuildClassField(String key) throws NoSuchFieldException {
+        try {
+            Field field = Build.class.getDeclaredField(key);
+            dlog("Field " + key + " found in Build.class");
+            return field;
+        } catch (NoSuchFieldException e) {
+            Field field = Build.VERSION.class.getDeclaredField(key);
+            dlog("Field " + key + " found in Build.VERSION.class");
+            return field;
         }
     }
 
@@ -175,18 +214,11 @@ public class PropImitationHooks {
     }
 
     private static void setCertifiedProps() {
-        for (String entry : sCertifiedProps) {
-            // Each entry must be of the format FIELD:value
-            final String[] fieldAndProp = entry.split(":", 2);
-            if (fieldAndProp.length != 2) {
-                Log.e(TAG, "Invalid entry in certified props: " + entry);
-                continue;
-            }
-            setPropValue(fieldAndProp[0], fieldAndProp[1]);
+        for (Map.Entry<String, String> entry : DEFAULT_VALUES.entrySet()) {
+            String propKey = PROP_HOOKS + entry.getKey();
+            String value = SystemProperties.get(propKey);
+            setPropValue(entry.getKey(), value != null ? value : entry.getValue());
         }
-        setSystemProperty(PROP_SECURITY_PATCH, Build.VERSION.SECURITY_PATCH);
-        setSystemProperty(PROP_FIRST_API_LEVEL,
-                Integer.toString(Build.VERSION.DEVICE_INITIAL_SDK_INT));
     }
 
     private static void setSystemProperty(String name, String value) {
