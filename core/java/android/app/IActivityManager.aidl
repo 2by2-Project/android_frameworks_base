@@ -966,9 +966,4 @@ interface IActivityManager {
      */
     oneway void frozenBinderTransactionDetected(int debugPid, int code, int flags, int err);
     int getBindingUidProcessState(int uid, in String callingPackage);
-
-    /**
-     *  Should disable touch if three fingers swipe enabled
-     */
-    boolean isThreeFingersSwipeActive();
 }

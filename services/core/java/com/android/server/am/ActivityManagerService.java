@@ -527,8 +527,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import lineageos.providers.LineageSettings;
-
 public class ActivityManagerService extends IActivityManager.Stub
         implements Watchdog.Monitor, BatteryStatsImpl.BatteryCallback, ActivityManagerGlobalLock {
 
@@ -1746,10 +1744,6 @@ public class ActivityManagerService extends IActivityManager.Stub
 
     static final HostingRecord sNullHostingRecord =
             new HostingRecord(HostingRecord.HOSTING_TYPE_EMPTY);
-
-    final ThreeFingersSwipeObserver mThreeFingersSwipeObserver;
-    private boolean mThreeFingersSwipeEnabled;
-
     /**
      * Used to notify activity lifecycle events.
      */
@@ -2566,7 +2560,6 @@ public class ActivityManagerService extends IActivityManager.Stub
         mEnableModernQueue = false;
         mBroadcastQueues = injector.getBroadcastQueues(this);
         mComponentAliasResolver = new ComponentAliasResolver(this);
-        mThreeFingersSwipeObserver = null;
     }
 
     // Note: This method is invoked on the main thread but may need to attach various
@@ -2676,7 +2669,6 @@ public class ActivityManagerService extends IActivityManager.Stub
         mPendingStartActivityUids = new PendingStartActivityUids();
         mTraceErrorLogger = new TraceErrorLogger();
         mComponentAliasResolver = new ComponentAliasResolver(this);
-        mThreeFingersSwipeObserver = new ThreeFingersSwipeObserver(mHandler, mContext);
     }
 
     public void setSystemServiceManager(SystemServiceManager mgr) {
@@ -8819,7 +8811,6 @@ public class ActivityManagerService extends IActivityManager.Stub
         }
         mAppErrors.loadAppsNotReportingCrashesFromConfig(res.getString(
                 com.android.internal.R.string.config_appsNotReportingCrashes));
-        mThreeFingersSwipeObserver.registerObserver();
     }
 
     /**
@@ -20732,32 +20723,6 @@ public class ActivityManagerService extends IActivityManager.Stub
         }
     }
 
-    private class ThreeFingersSwipeObserver extends ContentObserver {
-
-        private final Context mContext;
-
-        public ThreeFingersSwipeObserver(Handler handler, Context context) {
-            super(handler);
-            mContext = context;
-        }
-
-        public void registerObserver() {
-            mContext.getContentResolver().registerContentObserver(
-                    Settings.System.getUriFor(Settings.System.THREE_FINGER_GESTURE),
-                    false, this, UserHandle.USER_ALL);
-            update();
-        }
-
-        private void update() {
-            mThreeFingersSwipeEnabled = LineageSettings.System.getIntForUser(mContext.getContentResolver(),
-                    Settings.System.THREE_FINGER_GESTURE, 12, UserHandle.USER_CURRENT) != 0;
-        }
-
-        public void onChange(boolean selfChange) {
-            update();
-        }
-    }
-
     @Override
     public boolean isAppFreezerSupported() {
         final long token = Binder.clearCallingIdentity();
@@ -20907,10 +20872,5 @@ public class ActivityManagerService extends IActivityManager.Stub
             app = mPidsSelfLocked.get(debugPid);
         }
         mOomAdjuster.mCachedAppOptimizer.binderError(debugPid, app, code, flags, err);
-    }
-
-    @Override
-    public boolean isThreeFingersSwipeActive() {
-        return mThreeFingersSwipeEnabled;
     }
 }
