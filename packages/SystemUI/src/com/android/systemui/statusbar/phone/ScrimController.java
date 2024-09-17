@@ -31,8 +31,10 @@ import android.animation.ValueAnimator;
 import android.annotation.IntDef;
 import android.app.AlarmManager;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.graphics.Color;
 import android.provider.Settings;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Trace;
 import android.os.UserHandle;
@@ -83,6 +85,7 @@ import com.android.systemui.statusbar.policy.ConfigurationController;
 import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.util.AlarmTimeout;
 import com.android.systemui.util.kotlin.JavaAdapter;
+import com.android.systemui.util.settings.SystemSettings;
 import com.android.systemui.util.wakelock.DelayedWakeLock;
 import com.android.systemui.util.wakelock.WakeLock;
 import com.android.systemui.wallpapers.data.repository.WallpaperRepository;
@@ -91,6 +94,7 @@ import java.io.PrintWriter;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.concurrent.Executor;
+import java.util.Collection;
 import java.util.function.Consumer;
 
 import javax.inject.Inject;
@@ -214,6 +218,8 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
     private ScrimView mScrimBehind;
 
     private Runnable mScrimBehindChangeRunnable;
+
+    private final SystemSettings mSystemSettings;
 
     private final KeyguardStateController mKeyguardStateController;
     private final KeyguardUpdateMonitor mKeyguardUpdateMonitor;
@@ -348,6 +354,7 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
             AlternateBouncerToGoneTransitionViewModel alternateBouncerToGoneTransitionViewModel,
             KeyguardTransitionInteractor keyguardTransitionInteractor,
             KeyguardInteractor keyguardInteractor,
+            SystemSettings systemSettings,
             WallpaperRepository wallpaperRepository,
             @Main CoroutineDispatcher mainDispatcher,
             LargeScreenShadeInterpolator largeScreenShadeInterpolator) {
@@ -396,6 +403,7 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         mAlternateBouncerToGoneTransitionViewModel = alternateBouncerToGoneTransitionViewModel;
         mKeyguardTransitionInteractor = keyguardTransitionInteractor;
         mKeyguardInteractor = keyguardInteractor;
+        mSystemSettings = systemSettings;
         mWallpaperRepository = wallpaperRepository;
         mMainDispatcher = mainDispatcher;
     }
@@ -405,6 +413,18 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         mJavaAdapter.alwaysCollectFlow(
                 mWallpaperRepository.getWallpaperSupportsAmbientMode(),
                 this::setWallpaperSupportsAmbientMode);
+
+        // Reload the transparency value when changed
+        mSystemSettings.registerContentObserverForUser(
+                Settings.System.getUriFor(Settings.System.QS_TRANSPARENCY),
+                false,
+                new ContentObserver(mHandler) {
+                    @Override
+                    public void onChange(boolean selfChange, Collection<Uri> collection, int flags, int userId) {
+                        updateScrimAlpha();
+                    }
+                },
+                UserHandle.USER_ALL);
     }
 
     /**
@@ -429,10 +449,7 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         }
 
         if (mScrimBehind != null) {
-            mCustomScrimAlpha = (Settings.System.getFloatForUser(
-                mScrimBehind.getContext().getContentResolver(),
-                Settings.System.QS_TRANSPARENCY, 70,
-                UserHandle.USER_CURRENT) / 100);
+            updateScrimAlpha();
         }
         final ScrimState[] states = ScrimState.values();
         for (int i = 0; i < states.length; i++) {
@@ -1725,6 +1742,13 @@ public class ScrimController implements ViewTreeObserver.OnPreDrawListener, Dump
         for (ScrimState state : ScrimState.values()) {
             state.setLaunchingAffordanceWithPreview(launchingAffordanceWithPreview);
         }
+    }
+
+    public void updateScrimAlpha() {
+        mCustomScrimAlpha = (Settings.System.getFloatForUser(
+            mScrimBehind.getContext().getContentResolver(),
+            Settings.System.QS_TRANSPARENCY, 70,
+            UserHandle.USER_CURRENT) / 100);
     }
 
     public interface Callback {
