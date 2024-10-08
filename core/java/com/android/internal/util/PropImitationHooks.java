@@ -83,7 +83,6 @@ public class PropImitationHooks {
         "PIXEL_EXPERIENCE"
     );
 
-    private static volatile String[] sCertifiedProps;
     private static volatile String sStockFp, sNetflixModel;
 
     private static volatile String sProcessName;
@@ -104,7 +103,6 @@ public class PropImitationHooks {
             return;
         }
 
-        sCertifiedProps = res.getStringArray(R.array.config_certifiedBuildProperties);
         sStockFp = res.getString(R.string.config_stockFingerprint);
         sNetflixModel = res.getString(R.string.config_netflixSpoofModel);
 
@@ -184,10 +182,6 @@ public class PropImitationHooks {
     }
 
     private static void setCertifiedPropsForGms() {
-        if (sCertifiedProps.length == 0) {
-            dlog("Certified props are not set");
-            return;
-        }
         final boolean was = isGmsAddAccountActivityOnTop();
         final TaskStackListener taskStackListener = new TaskStackListener() {
             @Override
