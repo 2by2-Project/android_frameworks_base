@@ -177,7 +177,7 @@ public class PhoneStatusBarPolicy
     private NfcAdapter mAdapter;
 
     @Inject
-    public PhoneStatusBarPolicy(StatusBarIconController iconController,
+    public PhoneStatusBarPolicy(Context context, StatusBarIconController iconController,
             CommandQueue commandQueue, BroadcastDispatcher broadcastDispatcher,
             @Main Executor mainExecutor, @UiBackground Executor uiBgExecutor, @Main Looper looper,
             @Main Resources resources, CastController castController,
