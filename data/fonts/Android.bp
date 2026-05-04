@@ -93,6 +93,7 @@ genrule {
         ":Roboto",
         ":RobotoFlex",
         ":SourceSansPro",
+        ":mejiro",  // 2by2 Additions
         ":noto-fonts",
     ],
     exclude_srcs: [
